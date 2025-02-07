@@ -1,5 +1,6 @@
 use std::fmt;
 use std::io::{self, Read};
+use std::thread::current;
 
 #[derive(Clone, Copy, Debug)]
 enum Direction {
@@ -125,95 +126,81 @@ impl Elevator {
 
     fn transition(&mut self, dest_floor: Option<i8>, direction: Option<Direction>) {
         self.state = match &self.state {
-            &State::Closed { 
+            State::Closed { 
                 moving: false,
-                direction: None,
-                current_floor: Some(0), 
-                dest_floor: None, 
-                door_open: false 
-            } => match direction {
-                Some(Direction::Up) => State::Open { 
-                    moving: false, 
-                    direction: Some(Direction::Up), 
-                    current_floor: Some(0), 
-                    dest_floor: None, 
-                    door_open: true, 
-                },
-                Some(Direction::Down) => State::Open { 
-                    moving: false, 
-                    direction: Some(Direction::Down), 
-                    current_floor: Some(0), 
-                    dest_floor: None, 
-                    door_open: true, 
-                },
-                _ => State::Closed { 
-                    moving: false, 
-                    direction: None, 
-                    current_floor: Some(0), 
-                    dest_floor: None, 
-                    door_open: false, 
-                },
-            },
-            &State::Open { 
+                direction, 
+                current_floor, 
+                dest_floor,
+                door_open: false, 
+            } => State::Open { 
                 moving: false, 
-                direction: None, 
-                current_floor: Some(0), 
+                direction: *direction, 
+                current_floor: *current_floor, 
                 dest_floor: None, 
                 door_open: true,
-            } => match dest_floor {
-                Some(0) => State::Closed { 
+            },
+            
+            State::Open { 
+                moving: false,
+                direction,
+                current_floor, 
+                dest_floor, 
+                door_open: true, 
+            } => State::Closed { 
                     moving: false, 
-                    direction: direction, 
-                    current_floor: Some(0), 
-                    dest_floor: dest_floor, 
-                    door_open: false 
-                },
-                Some(1) => State::Closed { 
-                    moving: false, 
-                    direction: direction, 
-                    current_floor: Some(0), 
-                    dest_floor: dest_floor, 
-                    door_open: false 
-                },
-                Some(2) => State::Closed { 
-                    moving: false, 
-                    direction: direction, 
-                    current_floor: Some(0), 
-                    dest_floor: dest_floor, 
-                    door_open: false 
-                },
-                Some(3) => State::Closed { 
-                    moving: false, 
-                    direction: direction, 
-                    current_floor: Some(0), 
-                    dest_floor: dest_floor, 
-                    door_open: false 
-                },
-                _ => State::Closed { 
-                    moving: false, 
-                    direction: None, 
-                    current_floor: Some(0), 
-                    dest_floor: None, 
+                    direction: *direction, 
+                    current_floor: *current_floor, 
+                    dest_floor: *dest_floor, 
                     door_open: false, 
-                },
             },
-            &State::Moving { 
+
+            State::Closed { 
                 moving: true, 
-                direction: None, 
-                current_floor: None, 
-                dest_floor: None, 
+                direction, 
+                current_floor, 
+                dest_floor, 
                 door_open: false,
-            } => match dest_floor {
-                _ => State::Closed { 
-                    moving: false, 
-                    direction: direction, 
-                    current_floor: dest_floor, 
-                    dest_floor: None, 
-                    door_open: false 
-                },    
+            } if dest_floor.is_some() => State::Moving {
+                moving: true, 
+                direction: *direction, 
+                current_floor: *current_floor, 
+                dest_floor: *dest_floor, 
+                door_open: false 
             },
+            
+            State::Moving { 
+                moving: true, 
+                direction, 
+                current_floor,
+                dest_floor,
+                door_open,
+            } => {
+                if current_floor == dest_floor {
+                    State::Open {
+                        moving: false, 
+                        direction: *direction, 
+                        current_floor: *current_floor,
+                        dest_floor: *dest_floor,
+                        door_open: true,
+                    }
+                } else {
+                    let next_floor = if dest_floor.unwrap() > current_floor.unwrap() {
+                        current_floor.unwrap() + 1
+                    } else {
+                        current_floor.unwrap() - 1
+                    };
+
+                    State::Moving { 
+                        moving: true, 
+                        direction: *direction, 
+                        current_floor: *current_floor,
+                        dest_floor: *dest_floor,
+                        door_open: false,
+                    }                    
+                } 
+            }
             _ => self.state.clone(),
-        }
+        };
     }
 }
 
@@ -249,11 +236,11 @@ fn main() {
     };
 
     elevator.transition(dest_floor, direction);
-    print!("{}", elevator.state);
+    print!("{}\n", elevator.state);
     elevator.transition(dest_floor, direction);
-    print!("{}", elevator.state);
+    print!("{}\n", elevator.state);
     elevator.transition(dest_floor, direction);
-    print!("{}", elevator.state);
+    print!("{}\n", elevator.state);
     elevator.transition(dest_floor, direction);
-    print!("{}", elevator.state);    
+    print!("{}\n", elevator.state);    
 }
