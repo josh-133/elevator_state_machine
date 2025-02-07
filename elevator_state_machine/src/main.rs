@@ -1,6 +1,5 @@
 use std::fmt;
-use std::io::{self, Read};
-use std::thread::current;
+use std::io::{self};
 
 #[derive(Clone, Copy, Debug)]
 enum Direction {
@@ -124,67 +123,67 @@ impl Elevator {
         }
     }
 
-    fn transition(&mut self, dest_floor: Option<i8>, direction: Option<Direction>) {
+    fn transition(&mut self, df: Option<i8>, dir: Option<Direction>) {
         self.state = match &self.state {
             State::Closed { 
                 moving: false,
-                direction, 
+                direction: _current_dir, 
                 current_floor, 
-                dest_floor,
+                dest_floor: _current_df,
                 door_open: false, 
-            } => State::Open { 
+            } if dir.is_some() => State::Open { 
                 moving: false, 
-                direction: *direction, 
+                direction: dir, 
                 current_floor: *current_floor, 
-                dest_floor: None, 
+                dest_floor: df, 
                 door_open: true,
             },
             
             State::Open { 
                 moving: false,
-                direction,
+                direction: _current_dir,
                 current_floor, 
-                dest_floor, 
+                dest_floor: _current_df, 
                 door_open: true, 
-            } => State::Closed { 
+            } if df.is_some() => State::Closed { 
                     moving: false, 
-                    direction: *direction, 
+                    direction: dir, 
                     current_floor: *current_floor, 
-                    dest_floor: *dest_floor, 
+                    dest_floor: df, 
                     door_open: false, 
             },
 
             State::Closed { 
                 moving: true, 
-                direction, 
+                direction: _current_dir, 
                 current_floor, 
-                dest_floor, 
+                dest_floor: _current_df, 
                 door_open: false,
-            } if dest_floor.is_some() => State::Moving {
+            } if df.is_some() && dir.is_some() => State::Moving {
                 moving: true, 
-                direction: *direction, 
+                direction: dir, 
                 current_floor: *current_floor, 
-                dest_floor: *dest_floor, 
+                dest_floor: df, 
                 door_open: false 
             },
             
             State::Moving { 
                 moving: true, 
-                direction, 
+                direction: _current_dir, 
                 current_floor,
-                dest_floor,
-                door_open,
+                dest_floor: _current_df,
+                door_open: false,
             } => {
-                if current_floor == dest_floor {
+                if current_floor == &df {
                     State::Open {
                         moving: false, 
-                        direction: *direction, 
+                        direction: dir, 
                         current_floor: *current_floor,
-                        dest_floor: *dest_floor,
+                        dest_floor: df,
                         door_open: true,
                     }
                 } else {
-                    let next_floor = if dest_floor.unwrap() > current_floor.unwrap() {
+                    let next_floor = if df.unwrap() > current_floor.unwrap() {
                         current_floor.unwrap() + 1
                     } else {
                         current_floor.unwrap() - 1
@@ -192,9 +191,9 @@ impl Elevator {
 
                     State::Moving { 
                         moving: true, 
-                        direction: *direction, 
-                        current_floor: *current_floor,
-                        dest_floor: *dest_floor,
+                        direction: dir, 
+                        current_floor: Some(next_floor),
+                        dest_floor: df,
                         door_open: false,
                     }                    
                 } 
