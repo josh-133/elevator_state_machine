@@ -234,17 +234,29 @@ fn main() {
     let floor = floor.trim();
 
     let dest_floor: Option<i8> = match floor {
+        "B" => Some(-1),
         "G" => Some(0),
         "0" => Some(0),
         "1" => Some(1),
         "2" => Some(2),
         "3" => Some(3),
+        "4" => Some(4),
+        "5" => Some(5),
+        "6" => Some(6),
+        "7" => Some(7),
         _ => None,
     };
+
+    if direction.is_none() || dest_floor.is_none() {
+        println!("Direction and/or destination floor is invalid. Direction must be up or down, and floor number must be either B,G or 0-7");
+        std::process::exit(400);
+    }
 
     while !matches!(elevator.state, State::Open { moving: false, current_floor: Some(f), dest_floor: Some(d), .. } if f == d) {
         elevator.transition(dest_floor, direction);
         print!("{}\n", elevator.state);
     }
+
+    println!("Elevator has arrived at destination and doors are open.");
        
 }
