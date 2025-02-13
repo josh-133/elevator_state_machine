@@ -126,6 +126,20 @@ impl Elevator {
     fn transition(&mut self, df: Option<i8>, dir: Option<Direction>) {
         self.state = match &self.state {
             State::Closed { 
+                moving: false, 
+                direction: _current_dir, 
+                current_floor, 
+                dest_floor: _current_df, 
+                door_open: false,
+            } if dir.is_some() && df.is_some() => State::Moving {
+                moving: true, 
+                direction: dir, 
+                current_floor: *current_floor, 
+                dest_floor: df, 
+                door_open: false 
+            },
+
+            State::Closed { 
                 moving: false,
                 direction: _current_dir, 
                 current_floor, 
@@ -151,20 +165,6 @@ impl Elevator {
                     current_floor: *current_floor, 
                     dest_floor: df, 
                     door_open: false, 
-            },
-
-            State::Closed { 
-                moving: true, 
-                direction: _current_dir, 
-                current_floor, 
-                dest_floor: _current_df, 
-                door_open: false,
-            } if df.is_some() && dir.is_some() => State::Moving {
-                moving: true, 
-                direction: dir, 
-                current_floor: *current_floor, 
-                dest_floor: df, 
-                door_open: false 
             },
             
             State::Moving { 
@@ -206,6 +206,11 @@ impl Elevator {
 fn main() {
 
     let mut elevator = Elevator::new();
+    let dest_floor = None;
+    let direction = None;
+
+    elevator.transition(dest_floor, direction);
+    print!("{}\n", elevator.state);
 
     println!("Press up or down button: ");
 
@@ -218,6 +223,9 @@ fn main() {
         "down" => Some(Direction::Down),
         _ => None,
     };
+
+    elevator.transition(dest_floor, direction);
+    print!("{}\n", elevator.state);
 
     println!("Select a floor: ");
 
@@ -234,12 +242,9 @@ fn main() {
         _ => None,
     };
 
-    elevator.transition(dest_floor, direction);
-    print!("{}\n", elevator.state);
-    elevator.transition(dest_floor, direction);
-    print!("{}\n", elevator.state);
-    elevator.transition(dest_floor, direction);
-    print!("{}\n", elevator.state);
-    elevator.transition(dest_floor, direction);
-    print!("{}\n", elevator.state);    
+    while !matches!(elevator.state, State::Open { moving: false, current_floor: Some(f), dest_floor: Some(d), .. } if f == d) {
+        elevator.transition(dest_floor, direction);
+        print!("{}\n", elevator.state);
+    }
+       
 }
