@@ -209,6 +209,7 @@ fn main() {
     let dest_floor = None;
     let direction = None;
 
+    // Initial elevator state
     elevator.transition(dest_floor, direction);
     print!("{}\n", elevator.state);
 
@@ -224,6 +225,7 @@ fn main() {
         _ => None,
     };
 
+    // Elevator state after up or down is selected
     elevator.transition(dest_floor, direction);
     print!("{}\n", elevator.state);
 
@@ -247,16 +249,23 @@ fn main() {
         _ => None,
     };
 
+    // Check is direction and destination floor is valid option
     if direction.is_none() || dest_floor.is_none() {
         println!("Direction and/or destination floor is invalid. Direction must be up or down, and floor number must be either B,G or 0-7");
-        std::process::exit(400);
+        std::process::exit(1);
     }
 
+    // Elevator keeps transitioning states until it gets to the destination floor
     while !matches!(elevator.state, State::Open { moving: false, current_floor: Some(f), dest_floor: Some(d), .. } if f == d) {
         elevator.transition(dest_floor, direction);
         print!("{}\n", elevator.state);
     }
 
-    println!("Elevator has arrived at destination and doors are open.");
+    match dest_floor {
+        Some(floor) => println!("Elevator has arrived at floor {} and doors are open.", floor),
+        None => println!("Elevator destination is unknown.")
+    }
+
+    // println!("Elevator has arrived at floor {} and doors are open.", dest_floor.map_or("Unknown".to_string(), |f| f.to_string()));
        
 }
